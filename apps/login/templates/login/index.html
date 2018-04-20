@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'login/css/style.css' %}">
+    <meta http-equiv="X-UA-Compatible" content"ie=edge">
+    <title>Login and Registration Form</title>
+</head>
+<body>
+    <h1 id=header> Login and Registration Form </h1>
+    <div class=panel>
+        <form id=form action='login/process' method='POST'>
+            {% csrf_token %}
+            <input type='hidden' name=action value='registration'>
+            <div>
+                <p>First Name: </p>
+                {% if messages%}
+                    {% for message in messages %}
+                        {% if "first_name" in message.tags %}
+                            <h6>{{ message }}</h6>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <input type='text' name='first_name' value="{{ first_name }}">
+            </div>
+            <div>
+                <p>Last Name: </p>
+                {% if messages%}
+                    {% for message in messages %}
+                        {% if "last_name" in message.tags %}
+                            <h6>{{ message }}</h6>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <input type='text' name='last_name' value="{{ last_name }}">
+            </div>
+            <div>
+                <p>Email: </p>
+                {% if messages%}
+                    {% for message in messages %}
+                        {% if "email" in message.tags %}
+                            <h6>{{ message }}</h6>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <input type='text' name='email' value="{{ email }}">
+            </div>
+            <div>
+                <p>Password: </p>
+                {% if messages%}
+                    {% for message in messages %}
+                        {% if "password" in message.tags %}
+                            <h6>{{ message }}</h6>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <input type='password' name='password' value="">
+            </div>
+            <div>
+                <p>Confirm PW: </p>
+                <input type='password' name='confrmpw' value="">
+            </div>
+            <input id=register type='submit' value='Register'>
+        </form>
+    </div>
+    <div class=panel>
+            <form id=form action='login/process' method='POST'>
+                {% csrf_token %}
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if "login" in message.tags %}
+                            <h6>{{ message }}</h6>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <input type='hidden' name=action value='login'>
+                <div>
+                    <p>Email: </p><input type='text' name='email' value="{{ email }}">
+                </div>
+                <div>
+                    <p>Password: </p><input type='password' name='password' value="">
+                </div>
+                <input id=register type='submit' value='Login'>
+            </form>
+        </div>
+    </body>
+</html>

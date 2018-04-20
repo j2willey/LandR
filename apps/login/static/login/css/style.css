@@ -1,0 +1,81 @@
+/*CSS reset settings here*/
+/* Jim_W */
+*{
+    margin: 0px;
+    padding: 0px;
+    font-family: Arial, Verdana, sans-serif;
+  }
+
+h1 {
+    color: black;
+    vertical-align: top;
+}
+h2 {
+    color: black;
+    vertical-align: top;
+    width: 250px;
+    padding: 0px 0px 0px 20px;
+    display: inline-block;
+}
+h6 {
+    color: red;
+}
+.success {
+    color: green;
+}
+body {
+    margin: 40px;
+    padding: 40px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: black;
+    width: 800px;
+}
+
+.flash {
+    margin: 10px;
+    padding: 10px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: black;
+    width: 300px;
+    color: white;
+    background-color: red;
+}
+
+.alert {
+    background-color: red;
+}
+
+.panel {
+    width: 300px;
+    padding: 0px;
+    display: inline-block;
+    vertical-align: top;
+}
+
+span {
+    display: inline-block;
+    width: 150px;
+}
+
+div { 
+    padding: 10px 0px;
+}
+
+p {
+    font-size: 12px;
+}
+#comment {
+    width: 300px;
+    height: 50px;
+}
+
+#register {
+    text-align: right;
+    display: block;
+    background-color: green;
+    color : white;
+    padding: 10px;
+    border-radius: 4px;
+}

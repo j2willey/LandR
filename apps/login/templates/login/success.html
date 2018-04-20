@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'login/css/style.css' %}">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>About</title>
+</head>
+<body>
+    <div>
+        {% if messages%}
+            {% for message in messages %}
+            <h6 class=success >{{ message }}</h6>
+            {% endfor %}
+        {% endif %}
+
+        <h1> Welcome, __you've been logged in, ({{ user }})! </h1>
+
+    <a href="logout"><button class="aButton" formmethod=GET formaction="/" >Logout</button></a>
+    </div>
+</body>
+</html>
