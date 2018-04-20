@@ -27,7 +27,8 @@ def logout(request):
         sessionkey = request.session["sessionkey"]
         users.objects.logoutSession(sessionkey)
     context = {}
-    return render(request,'login/index.html', context)
+    print("=logout()=================================")
+    return redirect('/')
 
 def process(request):
     print("=index()=================================")

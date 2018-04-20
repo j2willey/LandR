@@ -98,7 +98,7 @@ class usersManager(models.Manager):
     def validateSession(self, sessionkey):
         errors = []
         ss = sessions.objects.filter(session_key=sessionkey)
-        if len(ss) == 1 and ss[0].timeout_at > datetime.now():
+        if len(ss) == 1: # and ss[0].timeout_at > datetime.now():
             return True
         else:   # Update timeout since we have activity
             userSessionUpdate(sessionkey, uid)
@@ -107,7 +107,9 @@ class usersManager(models.Manager):
     def logoutSession(self, sessionkey):
         errors = []
         ss = sessions.objects.filter(session_key=sessionkey)
-        if len(ss) == 1 and ss[0].timeout_at > datetime.now():
+        #print( "timeout_at "  + str(type(ss[0].timeout_at))) 
+        #print("now()  " + str(type( datetime.now())))
+        if len(ss) == 1 : # and  ss[0].timeout_at > datetime.now():
             print("=logoutSession: found session to logout")
             ss[0].delete()
         return False
