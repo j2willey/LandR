@@ -15,9 +15,18 @@ def validateName(tag, name):
     errors = []
     if len(name) < 3:
         errors.append((tag, tag + " should be at least 2 characters."))
-    if re.match("^[a-zA-Z]+ *[a-zA-Z]+$", name) == None:
+    if re.match("^[a-zA-Z]+ *[a-zA-Z]*$", name) == None:
         errors.append((tag, tag + " can only contain letters."))
     return errors
+
+def validateItemName(tag, name):
+    errors = []
+    if len(name) < 4:
+        errors.append((tag, tag + " should be at least 3 characters."))
+    if re.match("^[a-zA-Z]+ *[a-zA-Z]*$", name) == None:
+        errors.append((tag, tag + " can only contain letters."))
+    return errors
+
 
 def validateEmail(email):
     #if re.match("^.+@([?)[a-zA-Z0-9-.]+.([a-zA-Z]{2,3}|[0-9]{1,3})(]?)$", email) != None:
@@ -144,7 +153,7 @@ class itemManager(models.Manager):
     def create_item(self, postData, user_id):
         errors = []
         item_name   = postData['item_name'].strip() if 'item_name' in postData else ""
-        errors.extend(validateName("item_name", item_name))
+        errors.extend(validateItemName("item_name", item_name))
         i = items.objects.filter(name = item_name)
         if len(i) != 0:
             errors.append(("item","item already exists. Added by " + i.added_by.first_name))
@@ -183,6 +192,8 @@ class itemManager(models.Manager):
         try:
             print("=getItem=======================1")
             item = items.objects.get(id = item_id)
+            for w in item.wishlists:
+                w.wishlists
             pprint(item)
             print("=getItem=======================3")
         except Exception as e:

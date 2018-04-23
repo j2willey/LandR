@@ -17,9 +17,7 @@
             {% csrf_token %}
             {% if messages %}
                 {% for message in messages %}
-                    {% if "login" in message.tags or "session" in message.tags %}
                         <h6>{{ message }}</h6>
-                    {% endif %}
                 {% endfor %}
             {% endif %}
             <input type='hidden' name=action value='login'>
