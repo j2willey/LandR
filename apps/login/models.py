@@ -6,6 +6,10 @@ import re
 
 # Create your models here.
 
+def print_postdata(funcname, postData):
+    print("=%s=======================\npostData:" % (funcname))
+    pprint(postData)
+
 def validateName(tag, name):
     errors = []
     if len(name) < 2:
@@ -39,31 +43,28 @@ def validatePassword(pw, cpw):
 
 def userSessionUpdate(sessionkey, uid = 0):
     errors = []
-    ss = sessions.objects.filter(user_id = uid, session_key=sessionkey)
+    ss = sessions.objects.filter(session_key=sessionkey)
     if len(ss) == 1:
         ss[0].login_at = datetime.now()
         ss[0].timeout_at = datetime.now() + timedelta(minutes=5)
-        ss[0].save()
-        # update ss
+        # TODO:  Time stamp not quite  compatible as is
+        #ss[0].save()
     elif len(ss) == 0 and uid != 0:
         timeout = datetime.now() + timedelta(minutes=5)
         sessions.objects.create(user_id = uid, session_key=sessionkey, timeout_at=timeout)
-        # insert ss
     else:
         errors.append(("login","Internal Session error."))
     return errors
 
 class usersManager(models.Manager):
     def validate_registration(self, postData):
+        print("validate_registration", postData)
         errors = []
         fname   = postData['first_name'].strip() if 'first_name' in postData else ""
         lname   = postData['last_name'].strip()  if 'last_name'  in postData else ""
         email   = postData['email'].strip()      if 'email'      in postData else ""
         password= postData['password'].strip()   if 'password'   in postData else ""
         confrmpw= postData['confrmpw'].strip()   if 'confrmpw'   in postData else ""
-        print("fname: " + fname)
-        print("lname: " + lname)
-        print("email: " + email)
         errors.extend(validateName("first_name", fname))
         errors.extend(validateName("last_name", lname))
         errors.extend(validateEmail(email))
@@ -74,6 +75,16 @@ class usersManager(models.Manager):
                    'email'      : email,
                    "password"   : password_hash}
         return(errors, context)
+
+    def register(self, postData):
+        (errors, context) = self.validate_registration(postData)
+        if len(errors) == 0:
+            try:
+                users.objects.create(**context)
+            except Exception as e:
+                print("ERROR: Creating user in db - " + str(e))
+                errors["Error on creating user id in db" + e]
+        return errors
 
     def login(self, postData, sessionkey):
         errors = []
@@ -92,17 +103,18 @@ class usersManager(models.Manager):
                 errors.append(("login","Login failed.")) 
             else:
                 userSessionUpdate(sessionkey, uid)
-        context = { 'email' : email }       
-        return errors, context
+        return errors
 
     def validateSession(self, sessionkey):
         errors = []
         ss = sessions.objects.filter(session_key=sessionkey)
+        print("=validateSession=======================")
         if len(ss) == 1: # and ss[0].timeout_at > datetime.now():
-            return True
-        else:   # Update timeout since we have activity
-            userSessionUpdate(sessionkey, uid)
-        return False
+            userSessionUpdate(sessionkey, ss[0].user_id)
+        else:
+            print("Session not valid. May have timed out.")
+            errors.append(("session","Session not valid. May have timed out.")) 
+        return errors
 
     def logoutSession(self, sessionkey):
         errors = []
@@ -115,6 +127,17 @@ class usersManager(models.Manager):
         return False
 
 
+
+class sessionManager(models.Manager):
+    def getSessionUser(self, sessionkey):
+        errors = []
+        try:
+            ss = sessions.objects.get(session_key=sessionkey)
+            print("=getSessionUser=======================" + ss.user.first_name)
+        except Exception as e:
+            print("ERROR: GetSessionUser Failed")
+            errors.append(("session","Session User missing.")) 
+        return errors, ss.user.first_name
 
 
 class users(models.Model):
@@ -133,3 +156,5 @@ class sessions(models.Model):
     created_at = models.DateTimeField(auto_now_add=True) 
     updated_at = models.DateTimeField(auto_now=True)
     user       = models.ForeignKey(users,related_name="sessions")
+    objects = sessionManager()
+

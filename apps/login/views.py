@@ -5,6 +5,26 @@ from pprint import pprint
 from . models import *
 from django.utils.crypto import get_random_string
 
+def errors_to_messages(request, errors):
+    print("Errors:")
+    pprint(errors)
+    for tag, value in errors:
+        messages.error(request, value, extra_tags=tag)
+
+def validate_session(request):
+    errors = []
+    if "sessionkey" not in request.session or request.session["sessionkey"] == "":
+        errors.append(("session", "session key not found."))
+    else:
+        sessionkey = request.session["sessionkey"]
+        errors = users.objects.validateSession(sessionkey)
+    if len(errors):
+        errors_to_messages(request, errors)
+        return False
+    return True
+
+
+
 # Create your views here.
 def index(request):
     print("=index()=================================")
@@ -14,9 +34,11 @@ def index(request):
 
 # Create your views here.
 def welcome(request):
-    print("=index()=================================")
-    pprint(request.session)
-    context = {}
+    print("=welcome()=================================")
+    if not validate_session(request):
+        return redirect('/')
+    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
+    context = { 'user' : user }
     return render(request,'login/success.html', context)
 
 # Create your views here.
@@ -26,56 +48,42 @@ def logout(request):
     if "sessionkey" in request.session and request.session["sessionkey"] != "":
         sessionkey = request.session["sessionkey"]
         users.objects.logoutSession(sessionkey)
-    context = {}
-    print("=logout()=================================")
+        request.session["sessionkey"] = ""
     return redirect('/')
 
 def process(request):
-    print("=index()=================================")
+    print("=process()=================================")
     action  = request.POST['action'].strip()  if 'action'  in request.POST else ""
     if "sessionkey" in request.session and request.session["sessionkey"] != "":
         sessionkey = request.session["sessionkey"]
     else: 
         sessionkey = get_random_string(length=14, allowed_chars='abcdefghijklmnopqrstuvxyz')
         request.session["sessionkey"] = sessionkey
-    #id      = request.POST['id'].strip()     if 'id'      in request.POST else ""
     errors = []
     print("Action: " + action)
     print("input: ")
     pprint(request.POST.keys())
     if action == "registration":
-        (errors, context) = users.objects.validate_registration(request.POST)
+        errors = users.objects.register(request.POST)
+        if len(errors) == 0:
+            errors = users.objects.login(request.POST, sessionkey)
         if len(errors):
-            # if the errors object contains anything, loop through each key-value pair and make a flash message
-            pprint(errors)
-            for tag, value in errors:
-                print(tag, value)
-                messages.error(request, value, extra_tags=tag)
-            # redirect the user back to the form to fix the errors
+            errors_to_messages(request, errors)
             return redirect(reverse(index))
         else:
-            # register user
-            # try:
-            users.objects.create(**context)
-            #except
-            # return error....
             messages.info(request, "successful registration", extra_tags='login')
             return redirect("/login/success")
     elif action == "login":
-        (errors, context) = users.objects.login(request.POST, sessionkey)
+        errors = users.objects.login(request.POST, sessionkey)
         if len(errors):
-            # if the errors object contains anything, loop through each key-value pair and make a flash message
-            for tag, value in errors:
-                print(tag, value)
-                messages.error(request, value, extra_tags=tag)
-            # redirect the user back to the form to fix the errors
+            errors_to_messages(request, errors)
             return redirect(reverse(index))
         else:
+            errors, request.session["user"] = sessions.objects.getSessionUser(sessionkey)
             messages.info(request, "successfully logged in", extra_tags='login')
             return redirect('/login/success')
     else:
         messages.error(request, "Unknown action")
-        # redirect the user back to the form to fix the errors
         return redirect(reverse(index))
 
     messages.error(request, "Don't know how we got here")    
