@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from datetime import datetime, timedelta
 from pprint import pprint
 import bcrypt
@@ -12,7 +13,7 @@ def print_postdata(funcname, postData):
 
 def validateName(tag, name):
     errors = []
-    if len(name) < 2:
+    if len(name) < 3:
         errors.append((tag, tag + " should be at least 2 characters."))
     if re.match("^[a-zA-Z]+ *[a-zA-Z]+$", name) == None:
         errors.append((tag, tag + " can only contain letters."))
@@ -80,7 +81,8 @@ class usersManager(models.Manager):
         (errors, context) = self.validate_registration(postData)
         if len(errors) == 0:
             try:
-                users.objects.create(**context)
+                u = users.objects.create(**context)
+                wishlists.objects.create(user = u, name = u.first_name + " " + u.last_name + "'s Wish List")                
             except Exception as e:
                 print("ERROR: Creating user in db - " + str(e))
                 errors["Error on creating user id in db" + e]
@@ -126,8 +128,6 @@ class usersManager(models.Manager):
             ss[0].delete()
         return False
 
-
-
 class sessionManager(models.Manager):
     def getSessionUser(self, sessionkey):
         errors = []
@@ -137,8 +137,80 @@ class sessionManager(models.Manager):
         except Exception as e:
             print("ERROR: GetSessionUser Failed")
             errors.append(("session","Session User missing.")) 
-        return errors, ss.user.first_name
+        return errors, ss.user.first_name, ss.user_id
 
+
+class itemManager(models.Manager):
+    def create_item(self, postData, user_id):
+        errors = []
+        item_name   = postData['item_name'].strip() if 'item_name' in postData else ""
+        errors.extend(validateName("item_name", item_name))
+        i = items.objects.filter(name = item_name)
+        if len(i) != 0:
+            errors.append(("item","item already exists. Added by " + i.added_by.first_name))
+        if len(errors) == 0:
+            try:
+                user = users.objects.get(id = user_id)
+                item = items.objects.create(name = item_name, added_by = user)
+                wishlist = wishlists.objects.get(user = user )
+                #wish = wishlist.items.add(items = item)
+                wish = item.wishlists.add(wishlist)
+                print("=create_item=======================7")
+            except Exception as e:
+                print("ERROR:" + str(e))
+                errors.append(("item","problem creating item " + str(e)))                        
+        return errors
+
+    def add_item(self, user_id, item_id):
+        errors = []
+        if len(errors) == 0:
+            try:
+                user = users.objects.get(id = user_id)
+                item = items.objects.get(id = item_id)
+                # TODO confirm item is not in list
+                # if len(i) != 0:
+                #     errors.append(("item","item already exists. Added by " + i.added_by.first_name))
+                wishlist = wishlists.objects.get(user = user )
+                wish = item.wishlists.add(wishlist)
+                print("=user_item=======================7")
+            except Exception as e:
+                print("ERROR:" + str(e))
+                errors.append(("item","problem adding item " + str(e)))                        
+        return errors
+
+    def getItem(self, item_id):
+        errors = []
+        try:
+            print("=getItem=======================1")
+            item = items.objects.get(id = item_id)
+            pprint(item)
+            print("=getItem=======================3")
+        except Exception as e:
+            print("ERROR:" + str(e))
+            errors.append(("ERROR","problem getting list " + str(e)))                        
+        return errors, item   
+
+
+class wishlistManager(models.Manager):
+    def getWishLists(self, user_id):
+        wishlist = [] 
+        others = []
+        errors = []
+        try:
+            print("=getWishLists=======================1")
+            #wishlist = wishlists.objects.get(user_id = user_id)
+            wishlist = items.objects.filter(wishlists = wishlists.objects.get(user_id = user_id))
+            print("=getWishLists=======================2")
+            #others   = wishlists.objects.filter(~Q(user_id = user_id))
+            others = items.objects.filter(~Q(wishlists = wishlists.objects.get(user_id = user_id)))
+            print("=getWishLists=======================3")
+        except Exception as e:
+            print("ERROR:" + str(e))
+            errors.append(("ERROR","problem getting list " + str(e)))                        
+        return errors, wishlist, others        
+
+    def getSessionUser(self, sessionkey):
+        pass
 
 class users(models.Model):
     first_name = models.CharField(max_length=255)
@@ -147,7 +219,7 @@ class users(models.Model):
     password   = models.CharField(max_length=255, default="*")
     created_at = models.DateTimeField(auto_now_add=True) 
     updated_at = models.DateTimeField(auto_now=True)
-    objects = usersManager()
+    objects    = usersManager()
 
 class sessions(models.Model):
     session_key= models.CharField(max_length=255)
@@ -156,5 +228,21 @@ class sessions(models.Model):
     created_at = models.DateTimeField(auto_now_add=True) 
     updated_at = models.DateTimeField(auto_now=True)
     user       = models.ForeignKey(users,related_name="sessions")
-    objects = sessionManager()
+    objects    = sessionManager()
+
+class wishlists(models.Model):
+    name       = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True) 
+    updated_at = models.DateTimeField(auto_now=True)
+    user       = models.ForeignKey(users,related_name="wishlist")
+    objects    = wishlistManager()
+    
+class items(models.Model):
+    name       = models.CharField(max_length=255)
+    added_by   = models.ForeignKey(users,related_name="items")
+    added_date = models.DateTimeField(auto_now_add=True) 
+    created_at = models.DateTimeField(auto_now_add=True) 
+    updated_at = models.DateTimeField(auto_now=True)
+    wishlists  = models.ManyToManyField(wishlists, related_name="items")
+    objects    = itemManager()
 

@@ -32,16 +32,79 @@ def index(request):
     context = {}
     return render(request,'login/index.html', context)
 
-# Create your views here.
 def welcome(request):
     print("=welcome()=================================")
     if not validate_session(request):
         return redirect('/')
     user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
     context = { 'user' : user }
-    return render(request,'login/success.html', context)
+    return render(request,'login/dashboard.html', context)
 
-# Create your views here.
+def dashboard(request):
+    print("=dashboard()=================================")
+    if not validate_session(request):
+        return redirect('/')
+    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
+    errors, fname, user_id = sessions.objects.getSessionUser(request.session["sessionkey"])
+    errors, wishlist, others = wishlists.objects.getWishLists(user_id)
+    pprint(errors)
+    pprint(wishlist)
+    pprint(others)
+    errors_to_messages(request, errors)
+    context = { 'user' : user , 'userwishlist' : wishlist, 'otherswishlist' : others}
+    return render(request,'login/dashboard.html', context)
+
+def add_item(request, item_id):
+    print("=create_item()=================================")
+    if not validate_session(request):
+        return redirect('/')
+    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
+    sessionkey = request.session["sessionkey"]
+    errors, fname, user_id = sessions.objects.getSessionUser(sessionkey)
+    context = { 'user' : user }
+    errors = items.objects.add_item(user_id, item_id)
+    if len(errors) == 0:
+        messages.info(request, "successfully added item", extra_tags='info')
+    else:
+        errors_to_messages(request, errors)
+    return redirect("/login/dashboard")
+
+
+
+
+
+def create_item(request):
+    print("=create_item()=================================")
+    if not validate_session(request):
+        return redirect('/')
+    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
+    sessionkey = request.session["sessionkey"]
+    errors, fname, user_id = sessions.objects.getSessionUser(sessionkey)
+    context = { 'user' : user }
+    if request.method == "POST":
+        print("this is a POST")
+        errors = items.objects.create_item(request.POST, user_id)
+        if len(errors) == 0:
+            messages.info(request, "successfully created item", extra_tags='info')
+        else:
+            errors_to_messages(request, errors)
+            return redirect("/login/wish_items/create")
+        return redirect("/login/dashboard")
+    else:
+        print("must be a get a GET")
+    return render(request,'login/create_item.html', context)
+
+def display_item(request, item_id):
+    print("=display_item()=================================")
+    if not validate_session(request):
+        return redirect('/')
+    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
+    errors, item = items.objects.getItem(item_id)
+    pprint(item)
+    context = { 'user' : user , 'item' : item}
+    print("=display_item()=============================end=")
+    return render(request,'login/display_item.html', context)
+
 def logout(request):
     print("=logout()=================================")
     pprint(request.session)
@@ -72,16 +135,16 @@ def process(request):
             return redirect(reverse(index))
         else:
             messages.info(request, "successful registration", extra_tags='login')
-            return redirect("/login/success")
+            return redirect("/login/dashboard")
     elif action == "login":
         errors = users.objects.login(request.POST, sessionkey)
         if len(errors):
             errors_to_messages(request, errors)
             return redirect(reverse(index))
         else:
-            errors, request.session["user"] = sessions.objects.getSessionUser(sessionkey)
+            errors, request.session["user"], user_id = sessions.objects.getSessionUser(sessionkey)
             messages.info(request, "successfully logged in", extra_tags='login')
-            return redirect('/login/success')
+            return redirect('/login/dashboard')
     else:
         messages.error(request, "Unknown action")
         return redirect(reverse(index))

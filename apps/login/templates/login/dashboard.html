@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'login/css/style.css' %}">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>My Wish List</title>
+</head>
+<body>
+    <a href="logout">Logout</a>
+    <div>
+        <h1> Hello, {{ user }}! </h1>
+        {% if messages%}
+            {% for message in messages %}
+            <h6 class=success >{{ message }}</h6>
+            {% endfor %}
+        {% endif %}
+
+    </div>
+    <div class=tblock>
+        <h2 class=ttitle>Your Wish List</h2>
+        <table style="width:100%">
+            <tr>
+            <th>Item</th>
+            <th>Added by</th> 
+            <th>Date Added</th>
+            <th>Action</th>
+            </tr>
+            {% if userwishlist%}
+                {% for item in userwishlist %}
+                    <tr>
+                    <th><a href="wish_items/{{ item.id }}">{{ item.name }}</a> </th>
+                    <th>{{ item.added_by.first_name }} </th> 
+                    <th>{{ item.added_date }} </th>
+                    <th><a href="remove_it">Remove from my Wishlist</th>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+        </table>
+    </div>
+    <p></p>
+    <div class=tblock>
+        <h2 class=ttitle>Other User's Wish List</h2>
+        <table style="width:100%">
+            <tr>
+            <th>Item</th>
+            <th>Added by</th> 
+            <th>Date Added</th>
+            <th>Action</th>
+            </tr>
+            {% if otherswishlist%}
+                {% for item in otherswishlist %}
+                    <tr>
+                    <th><a href="wish_items/{{ item.id }}">{{ item.name }}</a> </th>
+                    <th>{{ item.added_by.first_name }} </th> 
+                    <th>{{ item.added_date }} </th>
+                    <th><a href="wish_items/add_it/{{ item.id }}">Add to my Wishlist</th>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+        </table>
+    </div>
+    <a href="wish_items/1">Display Item (nothing)</a>
+    <a href="wish_items/create">Add Item</a>
+</body>
+</html>

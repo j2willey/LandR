@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'login/css/style.css' %}">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{ item.name }}</title>
+</head>
+<body>
+        <a href="dashboard">Home</a>
+        <a href="logout">Logout</a>
+    <div>
+        <h1>Item: {{ item.name }} </h1>
+        <h3>Users who added this product/item under their wish list.</h3>
+        <ul>
+        {% for wish in item.wishlists %}
+            <li>{{ wish.user.first_name }} </li> 
+        {% endfor %}
+
+        </ul>
+
+    </div>
+</body>
+</html>

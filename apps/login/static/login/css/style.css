@@ -66,16 +66,15 @@ div {
 p {
     font-size: 12px;
 }
-#comment {
-    width: 300px;
-    height: 50px;
-}
 
-#register {
-    text-align: right;
+.tblock {
     display: block;
-    background-color: green;
-    color : white;
     padding: 10px;
     border-radius: 4px;
 }
+table, th, td {
+    background-color: green;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
