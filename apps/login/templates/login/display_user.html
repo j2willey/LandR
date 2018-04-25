@@ -9,15 +9,18 @@
     <title>{{ item.name }}</title>
 </head>
 <body>
-        <a href="/login/dashboard">Home</a>
+        <a href="/login/quotes">Dashboard</a> |
         <a href="/login/logout">Logout</a>
     <div>
-        <h1>Item: {{ item.name }} </h1>
-        <h3>Users who added this product/item under their wish list.</h3>
+        <h2>Posts by: {{ theUser.name }} </h2>
+        <h3>Count:  {{ theUser.count }} </h3>
         <ul>
-        {% for wish in item.wishlists %}
-            <li>{{ wish.user.first_name }} </li> 
-        {% endfor %}
+            {% for q in theUser.quotes %}
+                <p>
+                <span class=name> {{ q.name }} : </span> 
+                <span> {{ q.quote }} </span> 
+                </p>
+            {% endfor %}
 
         </ul>
 

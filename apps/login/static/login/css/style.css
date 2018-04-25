@@ -10,15 +10,17 @@ h1 {
     color: black;
     vertical-align: top;
 }
-h2 {
-    color: black;
-    vertical-align: top;
-    width: 250px;
-    padding: 0px 0px 0px 20px;
-    display: inline-block;
-}
 h6 {
     color: red;
+}
+.bold {
+    font-style: bold;
+}
+.it {
+    font-style: italic;
+}
+.text {
+    color: green;
 }
 .success {
     color: green;
@@ -26,9 +28,6 @@ h6 {
 body {
     margin: 40px;
     padding: 40px;
-    border-style: solid;
-    border-width: 2px;
-    border-color: black;
     width: 800px;
 }
 
@@ -48,15 +47,42 @@ body {
 }
 
 .panel {
-    width: 300px;
-    padding: 0px;
-    display: inline-block;
+    margin : 0px;
+    width: 350px;
+    display: inline-block;    
     vertical-align: top;
+}
+.others {
+    height : 400px;
+}
+.favs {
+    height : 200px;
+}
+.quotes {
+    margin : 0px;
+    width: 300px;
+    padding: 5px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: black;
+    vertical-align: top;
+    overflow-y: scroll;
+}
+
+.name {
+    display : inline-block;
+    color : red;
+}
+.aQuote {
+    padding : 5px;
+    margin-bottom : 5px;
+    border-style: solid;
+    border-width: 2px;
+    border-color: black;
 }
 
 span {
     display: inline-block;
-    width: 150px;
 }
 
 div { 
@@ -64,7 +90,8 @@ div {
 }
 
 p {
-    font-size: 12px;
+    margin-top: 18px;
+    font-size: 18px;
 }
 
 .tblock {

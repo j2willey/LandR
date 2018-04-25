@@ -19,12 +19,10 @@ def validateName(tag, name):
         errors.append((tag, tag + " can only contain letters."))
     return errors
 
-def validateItemName(tag, name):
+def validateQuote(tag, quote):
     errors = []
-    if len(name) < 4:
-        errors.append((tag, tag + " should be at least 3 characters."))
-    if re.match("^[a-zA-Z]+ *[a-zA-Z]*$", name) == None:
-        errors.append((tag, tag + " can only contain letters."))
+    if len(quote) < 10:
+        errors.append((tag, tag + " should be at least 10 characters."))
     return errors
 
 
@@ -91,7 +89,6 @@ class usersManager(models.Manager):
         if len(errors) == 0:
             try:
                 u = users.objects.create(**context)
-                wishlists.objects.create(user = u, name = u.first_name + " " + u.last_name + "'s Wish List")                
             except Exception as e:
                 print("ERROR: Creating user in db - " + str(e))
                 errors["Error on creating user id in db" + e]
@@ -101,9 +98,6 @@ class usersManager(models.Manager):
         errors = []
         email   = postData['email'].strip()      if 'email'      in postData else ""
         password= postData['password'].strip()   if 'password'   in postData else ""
-        print("email: " + email)
-        password_hash=password #bcrypt it
-        # Retrive PWHashfrom DB
         u = users.objects.filter(email = email)
         if len(u) == 0:
             errors.append(("login","Login failed."))        
@@ -130,8 +124,6 @@ class usersManager(models.Manager):
     def logoutSession(self, sessionkey):
         errors = []
         ss = sessions.objects.filter(session_key=sessionkey)
-        #print( "timeout_at "  + str(type(ss[0].timeout_at))) 
-        #print("now()  " + str(type( datetime.now())))
         if len(ss) == 1 : # and  ss[0].timeout_at > datetime.now():
             print("=logoutSession: found session to logout")
             ss[0].delete()
@@ -140,36 +132,94 @@ class usersManager(models.Manager):
 class sessionManager(models.Manager):
     def getSessionUser(self, sessionkey):
         errors = []
+        user = {}
         try:
             ss = sessions.objects.get(session_key=sessionkey)
-            print("=getSessionUser=======================" + ss.user.first_name)
+            user = { 'first_name' : ss.user.first_name,
+                     'last_name'  : ss.user.last_name,
+                     'email'      : ss.user.email,
+                     'name'       : ss.user.first_name + " " + ss.user.last_name,
+                     'id'         : ss.user.id }
         except Exception as e:
-            print("ERROR: GetSessionUser Failed")
+            print("ERROR: GetSessionUser Failed\n" + str(e))
             errors.append(("session","Session User missing.")) 
-        return errors, ss.user.first_name, ss.user_id
+        return errors, user
 
 
-class itemManager(models.Manager):
-    def create_item(self, postData, user_id):
+class quotesManager(models.Manager):
+    def add_quote(self, postData, user_id):
+        print("=quotesManager.add_quote()=================================")
         errors = []
-        item_name   = postData['item_name'].strip() if 'item_name' in postData else ""
-        errors.extend(validateItemName("item_name", item_name))
-        i = items.objects.filter(name = item_name)
-        if len(i) != 0:
-            errors.append(("item","item already exists. Added by " + i.added_by.first_name))
+        name   = postData['by'].strip() if 'by' in postData else ""
+        quote  = postData['quote'].strip() if 'quote' in postData else ""
+        errors.extend(validateName("name", name))
+        errors.extend(validateQuote("quote", quote))
+        qs = quotes.objects.filter(quote = quote)
+        if len(qs) != 0:
+            errors.append(("quote","quote already exists. Added by " + i.added_by.first_name))
         if len(errors) == 0:
             try:
                 user = users.objects.get(id = user_id)
-                item = items.objects.create(name = item_name, added_by = user)
-                wishlist = wishlists.objects.get(user = user )
-                #wish = wishlist.items.add(items = item)
-                wish = item.wishlists.add(wishlist)
-                print("=create_item=======================7")
+                quote = quotes.objects.create(name = name, quote = quote, posted_by_id = user_id)
             except Exception as e:
                 print("ERROR:" + str(e))
-                errors.append(("item","problem creating item " + str(e)))                        
+                errors.append(("quote","problem creating quote " + str(e)))                        
         return errors
 
+    def getFavQuotes(self, user_id):
+        favorites = [] 
+        others = []
+        errors = []
+        try:
+            favorites = quotes.objects.filter(favorite_of = user_id)
+            others    = quotes.objects.filter(~Q(favorite_of = user_id))
+        except Exception as e:
+            print("ERROR:" + str(e))
+            errors.append(("ERROR","problem getting quotes " + str(e)))                        
+        return errors, favorites, others        
+
+
+    def favorite(self, quote_id, user_id):
+        errors = []
+        try:
+            user  = users.objects.get(id = user_id)
+            quote = quotes.objects.get(id = quote_id)
+            quote.favorite_of.add(user)
+        except Exception as e:
+            print("ERROR:" + str(e))
+            errors.append(("item","problem favoriting quote " + str(e)))                        
+        return errors
+
+    def unfavorite(self, quote_id, user_id):
+        errors = []
+        try:
+            user  = users.objects.get(id = user_id)
+            quote = quotes.objects.get(id = quote_id)
+            quote.favorite_of.remove(user)
+        except Exception as e:
+            print("ERROR:" + str(e))
+            errors.append(("item","problem unfavoriting quote " + str(e)))                        
+        return errors
+
+
+    def getUser(self, user_id):
+        errors = []
+        theUser = {}
+        try:
+            user  = users.objects.get(id = user_id)
+            posts = quotes.objects.filter(posted_by = user_id)
+            theUser = { 'name'   : user.first_name + " " + user.last_name, 
+                        'count'  : len(posts),
+                        'quotes' : posts
+                        }
+            print(len(posts))
+        except Exception as e:
+            print("ERROR:" + str(e))
+            errors.append(("ERROR","problem getting list " + str(e)))                        
+        return errors, theUser
+
+
+class favoritesManager(models.Manager):
     def add_item(self, user_id, item_id):
         errors = []
         if len(errors) == 0:
@@ -181,47 +231,22 @@ class itemManager(models.Manager):
                 #     errors.append(("item","item already exists. Added by " + i.added_by.first_name))
                 wishlist = wishlists.objects.get(user = user )
                 wish = item.wishlists.add(wishlist)
-                print("=user_item=======================7")
             except Exception as e:
                 print("ERROR:" + str(e))
                 errors.append(("item","problem adding item " + str(e)))                        
         return errors
 
-    def getItem(self, item_id):
+    def remove_item(self, user_id, item_id):
         errors = []
-        try:
-            print("=getItem=======================1")
-            item = items.objects.get(id = item_id)
-            for w in item.wishlists:
-                w.wishlists
-            pprint(item)
-            print("=getItem=======================3")
-        except Exception as e:
-            print("ERROR:" + str(e))
-            errors.append(("ERROR","problem getting list " + str(e)))                        
-        return errors, item   
-
-
-class wishlistManager(models.Manager):
-    def getWishLists(self, user_id):
-        wishlist = [] 
-        others = []
-        errors = []
-        try:
-            print("=getWishLists=======================1")
-            #wishlist = wishlists.objects.get(user_id = user_id)
-            wishlist = items.objects.filter(wishlists = wishlists.objects.get(user_id = user_id))
-            print("=getWishLists=======================2")
-            #others   = wishlists.objects.filter(~Q(user_id = user_id))
-            others = items.objects.filter(~Q(wishlists = wishlists.objects.get(user_id = user_id)))
-            print("=getWishLists=======================3")
-        except Exception as e:
-            print("ERROR:" + str(e))
-            errors.append(("ERROR","problem getting list " + str(e)))                        
-        return errors, wishlist, others        
-
-    def getSessionUser(self, sessionkey):
-        pass
+        if len(errors) == 0:
+            try:
+                item = items.objects.get(id = item_id)
+                wishlist = wishlists.objects.get(id = user_id)
+                wishlist.items.remove(item)
+            except Exception as e:
+                print("ERROR:" + str(e))
+                errors.append(("item","problem adding item " + str(e)))                        
+        return errors
 
 class users(models.Model):
     first_name = models.CharField(max_length=255)
@@ -241,19 +266,11 @@ class sessions(models.Model):
     user       = models.ForeignKey(users,related_name="sessions")
     objects    = sessionManager()
 
-class wishlists(models.Model):
-    name       = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True) 
-    updated_at = models.DateTimeField(auto_now=True)
-    user       = models.ForeignKey(users,related_name="wishlist")
-    objects    = wishlistManager()
-    
-class items(models.Model):
-    name       = models.CharField(max_length=255)
-    added_by   = models.ForeignKey(users,related_name="items")
-    added_date = models.DateTimeField(auto_now_add=True) 
-    created_at = models.DateTimeField(auto_now_add=True) 
-    updated_at = models.DateTimeField(auto_now=True)
-    wishlists  = models.ManyToManyField(wishlists, related_name="items")
-    objects    = itemManager()
+
+class quotes(models.Model):
+    name        = models.CharField(max_length=255)
+    quote       = models.TextField()
+    posted_by   = models.ForeignKey(users,related_name="post")
+    favorite_of = models.ManyToManyField(users, related_name="favorites")
+    objects     = quotesManager()
 

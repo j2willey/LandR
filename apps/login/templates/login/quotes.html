@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'login/css/style.css' %}">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>My Wish List</title>
+</head>
+<body>
+    <a href="/login/logout">Logout</a>
+    <div>
+        <h1> Hello, {{ user.name }}! </h1>
+        {% if messages%}
+            {% for message in messages %}
+            <h6 class=success >{{ message }}</h6>
+            {% endfor %}
+        {% endif %}
+
+    </div>
+    <div class=panel> Quotable Quotes
+        <div class="quotes others" >
+            {% if quotableQuotes%}
+                {% for q in quotableQuotes %}
+                <div class=aQuote>
+                    <span class=bold> {{ q.name }} : </span> 
+                    <span class=text> {{ q.quote }} </span> 
+                    <h4> <span class=it> posted by </span> <a href="user/{{ q.posted_by_id }}"> {{ q.posted_by.first_name }} </a> </h4>
+                    <a href="quotes/favor/{{ q.id }}"><button class="aButton"  >Add to My List</button></a>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class=panel> Your Favorites
+        <div class="quotes favs">
+            {% if favQuotes%}
+                {% for q in favQuotes %}
+                <div class=aQuote>
+                    <span class=bold> {{ q.name }} : </span> 
+                    <span class=text> {{ q.quote }} </span> 
+                    <h4> <span class=it> posted by </span> <a href="user/{{ q.posted_by_id }}"> {{ q.posted_by.first_name }} </a> </h4>
+                    <a href="quotes/unfavor/{{ q.id }}"><button class="aButton"  >Remove From My List</button></a>
+                </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class=tobequotes>
+            Contribute a Quote:
+            <form id=form action='quotes/add' method='POST'>
+                {% csrf_token %}
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if "name" in message.tags or "session" in message.tags %}
+                            <h6>{{ message }}</h6>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <div>
+                    <p>Quoted by: </p><input type='text' name='by' value="{{ by }}">
+                </div>
+                {% if messages %}
+                    {% for message in messages %}
+                        {% if "quote" in message.tags or "session" in message.tags %}
+                            <h6>{{ message }}</h6>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                <div>
+                    <p>Message: </p><textarea name=quote rows=4 cols=30>{{ quote }}</textarea>
+                </div>
+                <input id=register type='submit' value='Submit'>
+            </form>
+        </div>
+        
+
+    </div>
+</body>
+</html>

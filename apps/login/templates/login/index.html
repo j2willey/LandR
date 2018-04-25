@@ -66,24 +66,24 @@
         </form>
     </div>
     <div class=panel>
-            <form id=form action='login/process' method='POST'>
-                {% csrf_token %}
-                {% if messages %}
-                    {% for message in messages %}
-                        {% if "login" in message.tags or "session" in message.tags %}
-                            <h6>{{ message }}</h6>
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-                <input type='hidden' name=action value='login'>
-                <div>
-                    <p>Email: </p><input type='text' name='email' value="{{ email }}">
-                </div>
-                <div>
-                    <p>Password: </p><input type='password' name='password' value="">
-                </div>
-                <input id=register type='submit' value='Login'>
-            </form>
-        </div>
+        <form id=form action='login/process' method='POST'>
+            {% csrf_token %}
+            {% if messages %}
+                {% for message in messages %}
+                    {% if "login" in message.tags or "session" in message.tags %}
+                        <h6>{{ message }}</h6>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            <input type='hidden' name=action value='login'>
+            <div>
+                <p>Email: </p><input type='text' name='email' value="{{ email }}">
+            </div>
+            <div>
+                <p>Password: </p><input type='password' name='password' value="">
+            </div>
+            <input id=register type='submit' value='Login'>
+        </form>
+    </div>
     </body>
 </html>

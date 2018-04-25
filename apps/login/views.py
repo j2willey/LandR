@@ -23,9 +23,12 @@ def validate_session(request):
         return False
     return True
 
+def user_info(request):
+    errors, user = sessions.objects.getSessionUser(request.session["sessionkey"])
+    if len(errors):
+        errors_to_messages(request)
+    return user
 
-
-# Create your views here.
 def index(request):
     print("=index()=================================")
     pprint(request.session)
@@ -36,74 +39,69 @@ def welcome(request):
     print("=welcome()=================================")
     if not validate_session(request):
         return redirect('/')
-    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
+    user = user_info(request)
     context = { 'user' : user }
     return render(request,'login/dashboard.html', context)
 
-def dashboard(request):
-    print("=dashboard()=================================")
+def quote(request):
+    print("=quote()=================================")
     if not validate_session(request):
         return redirect('/')
-    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
-    errors, fname, user_id = sessions.objects.getSessionUser(request.session["sessionkey"])
-    errors, wishlist, others = wishlists.objects.getWishLists(user_id)
-    pprint(errors)
-    pprint(wishlist)
-    pprint(others)
+    user = user_info(request)
+    errors, userFavorites, others = quotes.objects.getFavQuotes(user['id'])
+    errors = []
+    quotableQuotes = others                       
+    favQuotes      = userFavorites
     errors_to_messages(request, errors)
-    context = { 'user' : user , 'userwishlist' : wishlist, 'otherswishlist' : others}
-    return render(request,'login/dashboard.html', context)
+    context = { 'user' : user , 'quotableQuotes' : quotableQuotes, 'favQuotes' : favQuotes}
+    return render(request,'login/quotes.html', context)
 
-def add_item(request, item_id):
-    print("=create_item()=================================")
+
+def add_quote(request):
+    print("=add_quote()=================================")
     if not validate_session(request):
         return redirect('/')
-    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
-    sessionkey = request.session["sessionkey"]
-    errors, fname, user_id = sessions.objects.getSessionUser(sessionkey)
-    context = { 'user' : user }
-    errors = items.objects.add_item(user_id, item_id)
-    if len(errors) == 0:
-        messages.info(request, "successfully added item", extra_tags='info')
-    else:
-        errors_to_messages(request, errors)
-    return redirect("/login/dashboard")
-
-
-
-
-
-def create_item(request):
-    print("=create_item()=================================")
-    if not validate_session(request):
-        return redirect('/')
-    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
-    sessionkey = request.session["sessionkey"]
-    errors, fname, user_id = sessions.objects.getSessionUser(sessionkey)
-    context = { 'user' : user }
+    user = user_info(request)
     if request.method == "POST":
         print("this is a POST")
-        errors = items.objects.create_item(request.POST, user_id)
+        errors = quotes.objects.add_quote(request.POST, user['id'])
         if len(errors) == 0:
-            messages.info(request, "successfully created item", extra_tags='info')
+            messages.info(request, "successfully added quote", extra_tags='info')
         else:
             errors_to_messages(request, errors)
-            return redirect("/login/wish_items/create")
-        return redirect("/login/dashboard")
-    else:
-        print("must be a get a GET")
-    return render(request,'login/create_item.html', context)
+            return redirect("/login/quotes")
+    return redirect("/login/quotes")
 
-def display_item(request, item_id):
+def add_favorite(request, quote_id):
+    print("=add_favorite()=================================")
+    if not validate_session(request):
+        return redirect('/')
+    user = user_info(request)
+    errors = quotes.objects.favorite(quote_id, user['id'])
+    if len(errors):
+        errors_to_messages(request, errors)
+    return redirect("/login/quotes")
+
+def un_favorite(request, quote_id):
+    print("=un_favorite()=================================")
+    if not validate_session(request):
+        return redirect('/')
+    user = user_info(request)
+    errors = quotes.objects.unfavorite(quote_id, user['id'])
+    if len(errors):
+        errors_to_messages(request, errors)
+    return redirect("/login/quotes")
+
+def display_user(request, user_id):
     print("=display_item()=================================")
     if not validate_session(request):
         return redirect('/')
-    user  = request.session['user'].strip()  if 'user'  in request.session else "oops"
-    errors, item = items.objects.getItem(item_id)
-    pprint(item)
-    context = { 'user' : user , 'item' : item}
-    print("=display_item()=============================end=")
-    return render(request,'login/display_item.html', context)
+    user = user_info(request)
+    errors, theUser = quotes.objects.getUser(user_id)
+    context = { 'user' : user, 'theUser' : theUser }
+    return render(request,'login/display_user.html', context)
+
+
 
 def logout(request):
     print("=logout()=================================")
@@ -134,17 +132,21 @@ def process(request):
             errors_to_messages(request, errors)
             return redirect(reverse(index))
         else:
+            sessionkey = get_random_string(length=14, allowed_chars='abcdefghijklmnopqrstuvxyz')
+            user = user_info(request)
             messages.info(request, "successful registration", extra_tags='login')
-            return redirect("/login/dashboard")
+            return redirect("/login/quotes")
     elif action == "login":
         errors = users.objects.login(request.POST, sessionkey)
         if len(errors):
             errors_to_messages(request, errors)
             return redirect(reverse(index))
         else:
-            errors, request.session["user"], user_id = sessions.objects.getSessionUser(sessionkey)
+            user = user_info(request)
+            pprint(user)
+            request.session["user"] = user['name']
             messages.info(request, "successfully logged in", extra_tags='login')
-            return redirect('/login/dashboard')
+            return redirect('/login/quotes')
     else:
         messages.error(request, "Unknown action")
         return redirect(reverse(index))

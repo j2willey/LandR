@@ -11,7 +11,7 @@
 <body>
     <a href="/login/logout">Logout</a>
     <div>
-        <h1> Hello, {{ user }}! </h1>
+        <h1> Hello, {{ user.name }}! </h1>
         {% if messages%}
             {% for message in messages %}
             <h6 class=success >{{ message }}</h6>
@@ -34,7 +34,7 @@
                     <th><a href="wish_items/{{ item.id }}">{{ item.name }}</a> </th>
                     <th>{{ item.added_by.first_name }} </th> 
                     <th>{{ item.added_date }} </th>
-                    <th><a href="remove_it">Remove from my Wishlist</th>
+                    <th><a href="wish_items/remove_it/{{ item.id }}">Remove from my Wishlist</th>
                     </tr>
                 {% endfor %}
             {% endif %}
@@ -62,7 +62,6 @@
             {% endif %}
         </table>
     </div>
-    <a href="wish_items/1">Display Item (nothing)</a>
     <a href="wish_items/create">Add Item</a>
 </body>
 </html>
